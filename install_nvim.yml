@@ -1,0 +1,88 @@
+---
+- name: Remove Neovim if installed and install the latest version
+  hosts: all
+  become: true
+  become_method: sudo
+  become_user: root
+  vars_prompt:
+    - name: "ansible_become_pass"
+      prompt: "Enter sudo password"
+      private: yes
+
+  tasks:
+    - name: Check if Neovim is installed
+      command: nvim --version
+      register: nvim_output
+      failed_when: false
+      changed_when: false
+      tags: remove
+
+    - name: Uninstall Neovim if installed
+      command: apt-get remove neovim -y
+      when: nvim_output.rc == 0
+      tags: remove
+
+    - name: Install build prerequisites
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - ninja-build
+        - gettext
+        - libtool
+        - libtool-bin
+        - autoconf
+        - automake
+        - cmake
+        - g++
+        - pkg-config
+        - unzip
+      tags: pre
+
+    - name: Add Neovim APT repository key
+      apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x60C317803A41BA51845E371A1E9377A2BA9EF27F
+        state: present
+      tags: pre
+
+    - name: Add Neovim APT repository
+      apt_repository:
+        repo: deb http://ppa.launchpad.net/neovim-ppa/unstable/ubuntu focal main
+        state: present
+        filename: neovim.list
+      tags: pre
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      tags: pre
+
+    - name: Install Neovim
+      apt:
+        name: neovim
+        state: latest
+      tags: install-latest
+
+    - name: Clone Neovim repository
+      git:
+        repo: https://github.com/neovim/neovim.git
+        dest: /usr/local/src/neovim
+        version: v0.8.3
+      tags:
+        - install-8
+  
+    - name: Build and install Neovim
+      command: |
+        make CMAKE_BUILD_TYPE=Release
+        make install
+      args:
+        chdir: /usr/local/src/neovim
+      tags:
+        - install-8
+  
+    - name: Remove Neovim source code
+      file:
+        path: /usr/local/src/neovim
+        state: absent
+      tags:
+        - install-8
