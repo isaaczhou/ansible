@@ -1,0 +1,30 @@
+---
+- name: Add User with Password
+  hosts: all
+  become: true
+
+  vars:
+    username: isaaczhou
+    password: IsZh2020
+
+  tasks:
+    - name: Create user
+      user:
+        name: "{{ username }}"
+        password: "{{ password | password_hash('sha512') }}"
+        shell: /bin/bash
+        createhome: yes
+        home: "/home/{{ username }}"
+        state: present
+
+    - name: Ensure password is set
+      user:
+        name: "{{ username }}"
+        update_password: always
+        password: "{{ password | password_hash('sha512') }}"
+
+    - name: Copy SSH public key
+      authorized_key:
+        user: "{{ username }}"
+        key: "{{ lookup('file', '~/.ssh/ansible.pub') }}"
+        state: present
