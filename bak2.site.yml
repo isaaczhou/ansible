@@ -6,31 +6,45 @@
       tags: always
       apt:
         update_cache: yes
-      changed_when: false
       when: ansible_distribution == "Pop!_OS"
 
     - name: install updates (Rocky)
       tags: always
       dnf:
+        update_only: yes
         update_cache: yes
-      changed_when: false
       when: ansible_distribution == "Rocky"
 
     - name: install updates (CentOS)
       tags: always
       yum:
+        update_only: yes
         update_cache: yes
-      changed_when: false
       when: ansible_distribution == "CentOS"
 
 - hosts: all
   become: true
   tasks:
+    - name: create primerpy user
+      tags: always
+      user:
+        name: primerpy
+        groups: root
+
     - name: add ssh key for primerpy
       tags: always
       authorized_key:
         user: primerpy
         key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLGkIOVYsD2a7GhO4eGnBvl9kc8Yfx77Wc64F0Ue2wF ansible"
+
+    - name: add sudoers file for primerpy
+      tags: always
+      copy:
+        src: sudoer_primerpy
+        dest: /etc/sudoers.d/primerpy
+        owner: root
+        group: root
+        mode: 0440
 
     - name: install build-essential (Ubuntu)
       tags: dev, build-essential, ubuntu
