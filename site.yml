@@ -1,131 +1,139 @@
 ---
- 
 - hosts: all
   become: true
   pre_tasks:
+    - name: install updates (Ubuntu)
+      tags: always
+      apt:
+        update_cache: yes
+      when: ansible_distribution == "Pop!_OS"
 
-  - name: install updates (Ubuntu)
-    tags: always
-    apt:
-      update_cache: yes
-    when: ansible_distribution == "Pop!_OS"
+    - name: install updates (Rocky)
+      tags: always
+      dnf:
+        update_only: yes
+        update_cache: yes
+      when: ansible_distribution == "Rocky"
 
-  - name: install updates (Rocky)
-    tags: always
-    dnf:
-      update_only: yes
-      update_cache: yes
-    when: ansible_distribution == "Rocky"
+    - name: install updates (CentOS)
+      tags: always
+      yum:
+        update_only: yes
+        update_cache: yes
+      when: ansible_distribution == "CentOS"
 
-  - name: install updates (CentOS)
-    tags: always
-    yum:
-      update_only: yes
-      update_cache: yes
-    when: ansible_distribution == "CentOS"
+  tasks:
+    - name: install build-essential (Ubuntu)
+      tags: dev, build-essential, ubuntu
+      apt:
+        name:
+          - build-essential
+      when: ansible_distribution == "Pop!_OS"
 
-- hosts: all
+    - name: install development tools (Rocky)
+      tags: dev, development tools, rocky
+      dnf:
+        name:
+          - '@Development Tools'
+        state: latest
+      when: ansible_distribution == "Rocky"
+
+    - name: install updates (CentOS)
+      tags: dev, development tools, centos
+      yum:
+        name:
+          - '@Development Tools'
+        state: latest
+      when: ansible_distribution == "CentOS"
+
+- hosts: workstations
   become: true
   tasks:
+    - name: install unzip
+      package:
+        name: unzip
 
-  - name: install build-essential (Ubuntu)
-    tags: dev, build-essential, ubuntu
-    apt:
-      name:
-        - build-essential
-    when: ansible_distribution == "Pop!_OS"
-
-  - name: install development tools (Rocky)
-    tags: dev, development tools, rocky
-    dnf:
-      name:
-        - "@Development Tools"
-      state: latest
-    when: ansible_distribution == "Rocky"
-
-  - name: install updates (CentOS)
-    tags: dev, development tools, centos
-    yum:
-      name:
-        - "@Development Tools"
-      state: latest
-    when: ansible_distribution == "CentOS"
+    - name: install terraform
+      unarchive:
+        src: https://releases.hashicorp.com/terraform/1.5.2/terraform_1.5.2_linux_amd64.zip
+        dest: /usr/local/bin
+        remote_src: yes
+        mode: 0755
+        owner: root
+        group: root
 
 - hosts: web_servers
   become: true
   tasks:
+    - name: install apache and php for Ubuntu servers
+      tags: apache, apache2, ubuntu
+      apt:
+        name:
+          - apache2
+          - libapache2-mod-php
+        state: latest
+        update_cache: yes
+      when: ansible_distribution == "Pop!_OS"
 
-  - name: install apache and php for Ubuntu servers
-    tags: apache, apache2, ubuntu
-    apt:
-      name:
-        - apache2
-        - libapache2-mod-php
-      state: latest
-      update_cache: yes
-    when: ansible_distribution == "Pop!_OS"
- 
-  - name: install apache and php for Rocky servers
-    tags: apache, httpd, rocky
-    dnf:
-      name:
-        - httpd
-        - php
-      state: latest
-      update_cache: yes
-    when: ansible_distribution == "Rocky"
+    - name: install apache and php for Rocky servers
+      tags: apache, httpd, rocky
+      dnf:
+        name:
+          - httpd
+          - php
+        state: latest
+        update_cache: yes
+      when: ansible_distribution == "Rocky"
 
-  - name: install apache and php for CentOS servers
-    tags: apache, httpd, centos
-    yum:
-      name:
-        - httpd
-        - php
-      state: latest
-      update_cache: yes
-    when: ansible_distribution == "CentOS"
+    - name: install apache and php for CentOS servers
+      tags: apache, httpd, centos
+      yum:
+        name:
+          - httpd
+          - php
+        state: latest
+        update_cache: yes
+      when: ansible_distribution == "CentOS"
 
-  - name: copy config file for site
-    tags: kitty
-    copy:
-      src: ./config_files/kitty.conf
-      dest: kitty.conf
-      owner: "{{ lookup('env', 'USER') }}"
-      group: "{{ lookup('env', 'USER') }}"
-      mode: 0644
-    when: ansible_distribution == "Pop!_OS"
+    - name: copy config file for site
+      tags: kitty
+      copy:
+        src: ./config_files/kitty.conf
+        dest: kitty.conf
+        owner: "{{ lookup('env', 'USER') }}"
+        group: "{{ lookup('env', 'USER') }}"
+        mode: 0644
+      when: ansible_distribution == "Pop!_OS"
 
 - hosts: db_servers
   become: true
   tasks:
+    - name: install mariadb package (Rocky)
+      tags: db, mariadb, rocky
+      dnf:
+        name: mariadb
+        state: latest
+      when: ansible_distribution == "Rocky"
 
-  - name: install mariadb package (Rocky)
-    tags: db, mariadb, rocky
-    dnf:
-      name: mariadb
-      state: latest
-    when: ansible_distribution == "Rocky"
+    - name: install mariadb package (CentOS)
+      tags: db, mariadb, centos
+      yum:
+        name: mariadb-server
+        state: latest
+      when: ansible_distribution == "CentOS"
 
-  - name: install mariadb package (CentOS)
-    tags: db, mariadb, centos
-    yum:
-      name: mariadb-server
-      state: latest
-    when: ansible_distribution == "CentOS"
+    - name: install mariadb package (Pop!_OS)
+      tags: db, mariadb, ubuntu
+      apt:
+        name: mariadb-server
+        state: latest
+      when: ansible_distribution == "Pop!_OS"
 
-  - name: install mariadb package (Pop!_OS)
-    tags: db, mariadb, ubuntu
-    apt:
-      name: mariadb-server
-      state: latest
-    when: ansible_distribution == "Pop!_OS"
-
-- hosts: file_servers      
+- hosts: file_servers
   become: true
   tasks:
-
     - name: Install samba package
       tags: samba
-      package: 
+      package:
         name: samba
         state: latest
