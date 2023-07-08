@@ -1,0 +1,51 @@
+- name: Install Neofetch on Pop!_OS
+  apt:
+    name: neofetch
+    state: present
+  become: true
+  when: ansible_distribution == 'Pop!_OS'
+
+- name: Install EPEL repository on Rocky Linux
+  dnf: 
+    name: 
+      - epel-release
+      - neofetch
+    state: present
+  when: ansible_distribution in ['Rocky']
+
+
+- name: Install required dependencies
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - epel-release
+    - wget
+    - tar
+  when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'
+
+- name: Download Neofetch source code
+  shell: "wget https://github.com/dylanaraps/neofetch/archive/7.1.0.tar.gz -P /tmp"
+  args:
+    executable: /bin/bash
+    warn: false
+  when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'
+
+- name: Extract Neofetch source code
+  shell: "tar -xvf /tmp/7.1.0.tar.gz -C /tmp"
+  args:
+    executable: /bin/bash
+    warn: false
+  when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'
+
+- name: Build and install Neofetch
+  shell: "make install -C /tmp/neofetch-7.1.0"
+  args:
+    executable: /bin/bash
+  when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'
+
+- name: Remove temporary files
+  file:
+    path: "/tmp/7.1.0.tar.gz"
+    state: absent
+  when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'

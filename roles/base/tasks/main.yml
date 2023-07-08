@@ -1,0 +1,8 @@
+- name: add ssh key for primerpy
+  authorized_key:
+    user: primerpy
+    key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLGkIOVYsD2a7GhO4eGnBvl9kc8Yfx77Wc64F0Ue2wF ansible"
+
+- name: install neofetch
+  include_tasks: neofetch.yml
+
