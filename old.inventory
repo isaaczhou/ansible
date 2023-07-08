@@ -1,0 +1,5 @@
+192.168.122.18 apache_package=apache2 php_package=libapache2-mod-php
+192.168.122.131 apache_package=apache2 php_package=libapache2-mod-php
+192.168.122.177 apache_package=apache2 php_package=libapache2-mod-php
+root@192.168.122.221 apache_package=httpd php_package=php
+192.168.122.212 apache_package=httpd php_package=php
