@@ -1,37 +1,23 @@
 - name: install apache and php for Ubuntu servers
-  tags: apache, apache2, ubuntu
-  apt:
+  tags: apache, httpd, php
+  package:
     name:
-      - apache2
-      - libapache2-mod-php
+      - "{{ apache_package_name }}"
+      - "{{ php_package_name }}"
     state: latest
-    update_cache: yes
-  when: ansible_distribution == "Pop!_OS"
 
-- name: install apache and php for Rocky servers
-  tags: apache, httpd, rocky
-  dnf:
-    name:
-      - httpd
-      - php
-    state: latest
-    update_cache: yes
-  when: ansible_distribution == "Rocky"
-
-- name: install apache and php for CentOS servers
-  tags: apache, httpd, centos
-  yum:
-    name:
-      - httpd
-      - php
-    state: latest
-    update_cache: yes
-  when: ansible_distribution == "CentOS"
-
-- name: start httpd (Rocky and CentOS)
+- name: start and enable apache service
+  tags: apache, httpd
   service: 
-    name: httpd
+    name: "{{ apache_service }}"
     state: started
     enabled: yes
-  when: ansible_distribution in ["Rocky", "CentOS"]
 
+- name: change e-mail address for admin
+  tags: apache, httpd, centos 
+  lineinfile: 
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^ServerAdmin'
+    line: ServerAdmin somebody@test.net
+  when: ansible_distribution in ["CentOS", "Rocky"]
+  notify: restart_apache
